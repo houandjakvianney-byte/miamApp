@@ -2,49 +2,35 @@
 
 namespace App\Livewire\Client;
 
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use Livewire\WithFileUploads;
-use Livewire\Attributes\Layout;
+use Livewire\Attributes\Validate;
 
-#[Layout('layouts.app')]
 class ProfilUtilisateur extends Component
 {
-    use WithFileUploads;
+    #[Validate('required|string|max:255')]
+    public string $nom = '';
 
-    public $utilisateur;
-    public $commandes;
-    public $photo;
+    #[Validate('required|email|max:255')]
+    public string $email = '';
 
     public function mount()
     {
-        $this->utilisateur = auth()->user();
-        $this->commandes = $this->utilisateur->commandes()->latest()->get();
+        $user = Auth::user();
+        $this->nom = $user->nom;
+        $this->email = $user->email;
     }
 
-    public function save()
+    public function mettreAJour()
     {
-        // Simple validation
-        if (!$this->photo) {
-            return;
-        }
+        $this->validate();
+        
+        Auth::user()->update([
+            'nom' => $this->nom,
+            'email' => $this->email,
+        ]);
 
-        try {
-            // Store file
-            $filename = 'avatar_' . auth()->id() . '_' . time() . '.' . $this->photo->extension();
-            $this->photo->storeAs('avatars', $filename, 'public');
-
-            // Update user
-            auth()->user()->update(['avatar' => $filename]);
-
-            // Refresh
-            $this->utilisateur = auth()->user();
-            $this->photo = null;
-
-            session()->flash('message', 'Photo mise à jour !');
-
-        } catch (\Exception $e) {
-            session()->flash('error', 'Erreur: ' . $e->getMessage());
-        }
+        $this->dispatch('notify', ['message' => 'Profil mis à jour avec succès !']);
     }
 
     public function render()

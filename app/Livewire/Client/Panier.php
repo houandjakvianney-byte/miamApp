@@ -2,113 +2,76 @@
 
 namespace App\Livewire\Client;
 
-use App\Enums\StatutCommande;
-use App\Models\Commande;
-use App\Models\LigneCommande;
-use App\Models\Plat;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\On;
 use Livewire\Component;
+use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.app')]
 class Panier extends Component
 {
-    public string $adresseLivraison = '';
+    public array $panier = [];
 
-    #[On('panier-mis-a-jour')]
-    public function rafraichir(): void
+    public function mount()
     {
-        // Le render() relit la session à chaque appel, rien de plus à faire ici.
+        // Charger le panier depuis la session
+        $this->panier = session()->get('panier', []);
     }
 
-    public function incrementer(int $platId): void
+    public function retirerPlat($platId)
     {
-        $panier = session()->get('panier', []);
+        unset($this->panier[$platId]);
+        session()->put('panier', $this->panier);
+        $this->dispatch('panier-updated');
+    }
 
-        if (isset($panier[$platId])) {
-            $panier[$platId]['quantite']++;
-            session()->put('panier', $panier);
+    public function monterQuantite($platId)
+    {
+        if (isset($this->panier[$platId])) {
+            $this->panier[$platId]['quantite']++;
+            session()->put('panier', $this->panier);
+            $this->dispatch('panier-updated');
         }
     }
 
-    public function decrementer(int $platId): void
+    public function diminuerQuantite($platId)
     {
-        $panier = session()->get('panier', []);
-
-        if (isset($panier[$platId])) {
-            $panier[$platId]['quantite']--;
-
-            if ($panier[$platId]['quantite'] <= 0) {
-                unset($panier[$platId]);
-            }
-
-            session()->put('panier', $panier);
+        if (isset($this->panier[$platId]) && $this->panier[$platId]['quantite'] > 1) {
+            $this->panier[$platId]['quantite']--;
+            session()->put('panier', $this->panier);
+            $this->dispatch('panier-updated');
         }
-    }
-
-    public function retirer(int $platId): void
-    {
-        $panier = session()->get('panier', []);
-        unset($panier[$platId]);
-        session()->put('panier', $panier);
     }
 
     public function validerCommande()
     {
-        $this->validate([
-            'adresseLivraison' => 'required|string|min:5|max:255',
-        ], [
-            'adresseLivraison.required' => "L'adresse de livraison est obligatoire.",
-            'adresseLivraison.min' => "L'adresse semble trop courte.",
-        ]);
-
-        $panier = session()->get('panier', []);
-
-        if (empty($panier)) {
-            $this->addError('panier', 'Votre panier est vide.');
+        if (empty($this->panier)) {
+            $this->addError('panier', 'Votre panier est vide');
             return;
         }
 
-        $commande = Commande::create([
-            'utilisateur_id' => auth()->id(),
-            'statut' => StatutCommande::EnAttente,
-            'montant_total' => 0,
-            'adresse_livraison' => $this->adresseLivraison,
+        // Créer la commande
+        $montantTotal = array_sum(array_map(fn($item) => $item['prix'] * $item['quantite'], $this->panier));
+        
+        $commande = Auth::user()->commandes()->create([
+            'statut' => 'en_attente',
+            'montant_total' => $montantTotal,
         ]);
 
-        foreach ($panier as $platId => $item) {
-            // On revérifie le prix en base pour ne jamais faire confiance à la session.
-            $plat = Plat::find($platId);
-
-            if (! $plat) {
-                continue;
-            }
-
-            LigneCommande::create([
-                'commande_id' => $commande->id,
-                'plat_id' => $plat->id,
+        // Ajouter les lignes de commande
+        foreach ($this->panier as $platId => $item) {
+            $commande->lignes()->create([
+                'plat_id' => $platId,
                 'quantite' => $item['quantite'],
-                'prix_unitaire' => $plat->prix,
+                'prix_unitaire' => $item['prix'],
             ]);
         }
 
-        $commande->recalculerMontantTotal();
-
         session()->forget('panier');
-        $this->dispatch('panier-mis-a-jour');
-
-        return redirect()->route('client.suivi-commande', $commande);
+        $this->panier = [];
+        
+        $this->redirect(route('client.suivi-commande', $commande), navigate: true);
     }
 
     public function render()
     {
-        $panier = session()->get('panier', []);
-
-        $total = collect($panier)->sum(fn ($item) => $item['prix'] * $item['quantite']);
-
-        return view('livewire.client.panier', [
-            'panier' => $panier,
-            'total' => $total,
-        ]);
+        return view('livewire.client.panier');
     }
 }
