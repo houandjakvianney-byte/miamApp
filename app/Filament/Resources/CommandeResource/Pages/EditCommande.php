@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CommandeResource\Pages;
 
 use App\Filament\Resources\CommandeResource;
+use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditCommande extends EditRecord
@@ -11,6 +12,8 @@ class EditCommande extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [];
+        return [
+            Actions\DeleteAction::make(),
+        ];
     }
 }
