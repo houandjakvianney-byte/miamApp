@@ -13,42 +13,55 @@ use Filament\Tables\Table;
 class CategorieResource extends Resource
 {
     protected static ?string $model = Categorie::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
-
-    protected static ?string $navigationLabel = 'Catégories';
-
-    protected static ?string $modelLabel = 'catégorie';
-
-    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $label = 'Catégories';
+    protected static ?string $pluralLabel = 'Catégories';
 
     public static function form(Form $form): Form
     {
-        return $form->schema([
-            Forms\Components\TextInput::make('nom')
-                ->required()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('ordre_affichage')
-                ->numeric()
-                ->default(0)
-                ->helperText("Détermine l'ordre d'affichage des onglets côté client (0 = en premier)."),
-        ]);
+        return $form
+            ->schema([
+                Forms\Components\TextInput::make('nom')
+                    ->label('Nom')
+                    ->required()
+                    ->unique(ignoreRecord: true),
+                Forms\Components\TextInput::make('ordre_affichage')
+                    ->label('Ordre d\'affichage')
+                    ->numeric()
+                    ->default(0),
+            ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nom')->searchable(),
-                Tables\Columns\TextColumn::make('ordre_affichage')->label('Ordre')->sortable(),
-                Tables\Columns\TextColumn::make('plats_count')->counts('plats')->label('Nb de plats'),
+                Tables\Columns\TextColumn::make('nom')
+                    ->label('Nom')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('ordre_affichage')
+                    ->label('Ordre')
+                    ->sortable(),
             ])
-            ->defaultSort('ordre_affichage')
+            ->filters([
+                //
+            ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
     }
 
     public static function getPages(): array
