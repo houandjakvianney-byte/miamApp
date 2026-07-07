@@ -1,35 +1,57 @@
-<div
-    class="max-w-md mx-auto px-4 py-10 text-center"
-    @if ($enCours) wire:poll.5s="rafraichirStatut" @endif
->
-    <h1 class="text-lg font-semibold text-gray-500 mb-2">Commande #{{ $commande->id }}</h1>
+<div class="py-12">
+    <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="p-6 text-gray-900">
+                <h1 class="text-3xl font-bold mb-8">Suivi de commande</h1>
 
-    @php
-        $etapes = ['en_attente' => 'En préparation', 'en_preparation' => 'En préparation', 'en_livraison' => 'En livraison', 'livree' => 'Livrée'];
-        $statutActuel = $commande->statut->value;
-    @endphp
+                <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+                    <p class="text-gray-600"><strong>Commande #:</strong> {{ $commande->id }}</p>
+                    <p class="text-gray-600"><strong>Date:</strong> {{ $commande->date_commande->format('d/m/Y H:i') }}</p>
+                    <p class="text-gray-600"><strong>Statut:</strong> 
+                        <span class="inline-block px-3 py-1 rounded-full text-white font-semibold
+                            @if($commande->statut->value === 'en_attente') bg-yellow-500
+                            @elseif($commande->statut->value === 'en_preparation') bg-blue-500
+                            @elseif($commande->statut->value === 'en_livraison') bg-purple-500
+                            @elseif($commande->statut->value === 'livree') bg-green-500
+                            @elseif($commande->statut->value === 'annulee') bg-red-500
+                            @endif">
+                            {{ $commande->statut->name }}
+                        </span>
+                    </p>
+                </div>
 
-    <div class="my-8">
-        <span class="inline-block px-4 py-2 rounded-full text-white font-semibold
-            {{ match($statutActuel) {
-                'en_attente' => 'bg-yellow-500',
-                'en_preparation' => 'bg-blue-500',
-                'en_livraison' => 'bg-orange-500',
-                'livree' => 'bg-green-600',
-                'annulee' => 'bg-red-600',
-                default => 'bg-gray-400',
-            } }}">
-            {{ $commande->statut->label() }}
-        </span>
+                <h2 class="text-2xl font-semibold mb-4">Articles</h2>
+                <div class="overflow-x-auto mb-8">
+                    <table class="w-full text-left">
+                        <thead class="border-b-2 border-gray-300">
+                            <tr>
+                                <th class="pb-3">Plat</th>
+                                <th class="pb-3">Quantité</th>
+                                <th class="pb-3">Prix unitaire</th>
+                                <th class="pb-3">Sous-total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($commande->lignes as $ligne)
+                                <tr class="border-b border-gray-200">
+                                    <td class="py-4">{{ $ligne->plat->nom }}</td>
+                                    <td class="py-4">{{ $ligne->quantite }}</td>
+                                    <td class="py-4">{{ number_format($ligne->prix_unitaire, 2) }} €</td>
+                                    <td class="py-4 font-semibold">{{ number_format($ligne->quantite * $ligne->prix_unitaire, 2) }} €</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-right mb-8">
+                    <p class="text-2xl font-bold">Total: {{ number_format($commande->montant_total, 2) }} €</p>
+                </div>
+
+                <a href="{{ route('client.menu') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded transition">
+                    Retour au menu
+                </a>
+            </div>
+        </div>
     </div>
-
-    <p class="text-gray-500 text-sm mb-1">Adresse de livraison</p>
-    <p class="font-medium text-gray-900 mb-6">{{ $commande->adresse_livraison }}</p>
-
-    <p class="text-gray-500 text-sm mb-1">Montant total</p>
-    <p class="font-bold text-xl text-gray-900">{{ number_format($commande->montant_total, 0, ',', ' ') }} FCFA</p>
-
-    @if ($enCours)
-        <p class="text-xs text-gray-400 mt-8">Cette page se met à jour automatiquement.</p>
-    @endif
 </div>
