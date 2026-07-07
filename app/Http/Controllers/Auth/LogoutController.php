@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Auth;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
 
 class LogoutController
 {
-    public function __invoke(): RedirectResponse
+    public function __invoke(Request $request): RedirectResponse
     {
-        Auth::logout();
-        Session::invalidate();
-        Session::regenerateToken();
+        Auth::guard('web')->logout();
 
-        return redirect()->route('login');
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return redirect('/');
     }
 }

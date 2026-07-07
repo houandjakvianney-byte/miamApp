@@ -3,96 +3,74 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Routing\Controller;
 
-class SocialiteController extends Controller
+class SocialiteController
 {
-    // ==================== GOOGLE ====================
-    public function redirectGoogle()
+    public function redirectGoogle(): RedirectResponse
     {
         return Socialite::driver('google')->redirect();
     }
 
-    public function callbackGoogle()
+    public function callbackGoogle(): RedirectResponse
     {
-        try {
-            $user = Socialite::driver('google')->user();
-        } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Authentification Google échouée');
-        }
+        $googleUser = Socialite::driver('google')->user();
+        
+        $user = User::firstOrCreate(
+            ['google_id' => $googleUser->getId()],
+            [
+                'nom' => $googleUser->getName(),
+                'email' => $googleUser->getEmail(),
+                'avatar' => $googleUser->getAvatar(),
+            ]
+        );
 
-        $appUser = User::where('google_id', $user->getId())->first();
-
-        if (!$appUser) {
-            $appUser = User::create([
-                'nom' => $user->getName(),
-                'email' => $user->getEmail(),
-                'google_id' => $user->getId(),
-                'role' => 'client',
-            ]);
-        }
-
-        Auth::login($appUser);
+        auth()->login($user);
 
         return redirect()->route('client.menu');
     }
 
-    // ==================== FACEBOOK ====================
-    public function redirectFacebook()
+    public function redirectFacebook(): RedirectResponse
     {
         return Socialite::driver('facebook')->redirect();
     }
 
-    public function callbackFacebook()
+    public function callbackFacebook(): RedirectResponse
     {
-        try {
-            $user = Socialite::driver('facebook')->user();
-        } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Authentification Facebook échouée');
-        }
+        $facebookUser = Socialite::driver('facebook')->user();
+        
+        $user = User::firstOrCreate(
+            ['email' => $facebookUser->getEmail()],
+            [
+                'nom' => $facebookUser->getName(),
+                'avatar' => $facebookUser->getAvatar(),
+            ]
+        );
 
-        $appUser = User::where('email', $user->getEmail())->first();
-
-        if (!$appUser) {
-            $appUser = User::create([
-                'nom' => $user->getName(),
-                'email' => $user->getEmail(),
-                'role' => 'client',
-            ]);
-        }
-
-        Auth::login($appUser);
+        auth()->login($user);
 
         return redirect()->route('client.menu');
     }
 
-    // ==================== APPLE ====================
-    public function redirectApple()
+    public function redirectApple(): RedirectResponse
     {
         return Socialite::driver('apple')->redirect();
     }
 
-    public function callbackApple()
+    public function callbackApple(): RedirectResponse
     {
-        try {
-            $user = Socialite::driver('apple')->user();
-        } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Authentification Apple échouée');
-        }
+        $appleUser = Socialite::driver('apple')->user();
+        
+        $user = User::firstOrCreate(
+            ['email' => $appleUser->getEmail()],
+            [
+                'nom' => $appleUser->getName() ?? 'Utilisateur Apple',
+            ]
+        );
 
-        $appUser = User::where('email', $user->getEmail())->first();
-
-        if (!$appUser) {
-            $appUser = User::create([
-                'nom' => $user->getName() ?? 'Utilisateur Apple',
-                'email' => $user->getEmail(),
-                'role' => 'client',
-            ]);
-        }
-
-        Auth::login($appUser);
+        auth()->login($user);
 
         return redirect()->route('client.menu');
     }
