@@ -1,0 +1,18 @@
+{
+    "name": "MIAM",
+    "short_name": "MIAM",
+    "description": "Commandez vos plats préférés en quelques clics.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#f97316",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/logo-miam.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
