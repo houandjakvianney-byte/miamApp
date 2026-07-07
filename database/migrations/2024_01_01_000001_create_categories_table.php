@@ -10,9 +10,10 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('nom');
+            $table->string('nom')->unique();
             $table->integer('ordre_affichage')->default(0);
             $table->timestamps();
+            $table->index('ordre_affichage');
         });
     }
 

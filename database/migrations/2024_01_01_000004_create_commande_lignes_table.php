@@ -10,11 +10,13 @@ return new class extends Migration
     {
         Schema::create('commande_lignes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('commande_id')->constrained('commandes')->cascadeOnDelete();
-            $table->foreignId('plat_id')->constrained('plats')->restrictOnDelete();
-            $table->unsignedInteger('quantite')->default(1);
-            $table->decimal('prix_unitaire', 10, 2);
+            $table->foreignId('commande_id')->constrained('commandes')->onDelete('cascade');
+            $table->foreignId('plat_id')->constrained('plats')->onDelete('cascade');
+            $table->integer('quantite');
+            $table->decimal('prix_unitaire', 8, 2);
             $table->timestamps();
+            $table->index('commande_id');
+            $table->index('plat_id');
         });
     }
 
